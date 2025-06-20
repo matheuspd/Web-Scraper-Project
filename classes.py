@@ -9,6 +9,7 @@ class Disciplina:
         self.carga_estagio = int(ce) if ce else 0
         self.carga_cpcc = int(cp) if cp else 0
         self.carga_atpa = int(atpa) if atpa else 0
+        self.requisitos = []
 
 class Curso:
     def __init__(self, nome, unidade, duracao_ideal, duracao_min, duracao_max):

@@ -4,6 +4,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from bs4 import BeautifulSoup
+import time
 
 from classes import Curso, Disciplina, Unidade
 
@@ -63,6 +64,7 @@ for unidade_option in opcoes_unidade:
 
         # Espera grade carregar
         wait.until(EC.presence_of_element_located((By.ID, "gradeCurricular")))
+        time.sleep(1)
         soup = BeautifulSoup(driver.page_source, 'html.parser')
 
         nome_curso = soup.find('span', class_='curso').text.strip()
@@ -89,7 +91,9 @@ for unidade_option in opcoes_unidade:
                     cp = tds[6].text.strip()
                     atpa = tds[7].text.strip()
                     disc = Disciplina(codigo, nome, cred_aula, cred_trab, ch, ce, cp, atpa)
+                    # SEPARAR DISCIPLINAS OBRIGATORIAS, ELETIVAS E LIVRES
                     curso.obrigatorias.append(disc)
+                    # VER TAMBEM REQUISITOS
 
         unidade.cursos.append(curso)
         driver.find_element(By.ID, "step1-tab").click()
@@ -106,6 +110,65 @@ def listar_cursos_por_unidades(unidades):
             for curso in unidade.cursos:
                 print(f"  - {curso.nome}")
 
+def consultar_curso(unidades, nome_curso):
+    for unidade in unidades:
+        for curso in unidade.cursos:
+            if curso.nome.lower() == nome_curso.lower():
+                print(f"\n🎓 Curso: {curso.nome}")
+                print(f"🏫 Unidade: {curso.unidade}")
+                print(f"📚 Duração ideal: {curso.duracao_ideal} semestres")
+                print(f"📉 Duração mínima: {curso.duracao_minima} semestres")
+                print(f"📈 Duração máxima: {curso.duracao_maxima} semestres")
+
+                # MUDAR PRINT PARA CARGA HORARIA ESTAGIO E OUTRAS 2
+                print("\n📘 Disciplinas obrigatórias:")
+                for d in curso.obrigatorias:
+                    print(f"XXX - {d.codigo} | {d.nome} | {d.creditos_aula}A/{d.creditos_trabalho}T | CH: {d.carga_horaria}")
+                
+                print("\n📘 Disciplinas optativas eletivas:")
+                for d in curso.optativas_eletivas:
+                    print(f"YYY - {d.codigo} | {d.nome} | {d.creditos_aula}A/{d.creditos_trabalho}T | CH: {d.carga_horaria}")
+                
+                print("\n📘 Disciplinas optativas livres:")
+                for d in curso.optativas_livres:
+                    print(f"ZZZ - {d.codigo} | {d.nome} | {d.creditos_aula}A/{d.creditos_trabalho}T | CH: {d.carga_horaria}")
+
+                return curso
+    print(f"⚠️ Curso '{nome_curso}' não encontrado.")
+    return None
+
+def consultar_disciplina(unidades, codigo_busca):
+    codigo_busca = codigo_busca.strip().lower()
+    cursos_que_possuem = []
+    disciplina_encontrada = None
+
+    for unidade in unidades:
+        for curso in unidade.cursos:
+            for d in curso.obrigatorias:
+                if d.codigo.lower() == codigo_busca:
+                    if not disciplina_encontrada:
+                        disciplina_encontrada = d
+                    cursos_que_possuem.append((curso.nome, unidade.nome))
+
+    if not disciplina_encontrada:
+        print(f"⚠️ Nenhuma disciplina encontrada com o código '{codigo_busca}'.")
+        return
+
+    d = disciplina_encontrada
+    print(f"\n📖 Disciplina: {d.nome} ({d.codigo})")
+    print(f"📘 Créditos: {d.creditos_aula}A / {d.creditos_trabalho}T")
+    print(f"⏱️ CH: {d.carga_horaria}, Estágio: {d.carga_estagio}, CPCC: {d.carga_cpcc}, ATPA: {d.carga_atpa}")
+
+    print("\n📚 Presente nos cursos:")
+    for curso_nome, unidade_nome in cursos_que_possuem:
+        print(f" - {curso_nome} ({unidade_nome})")
+
+# Consulta 1
 listar_cursos_por_unidades(unidades)
+
+# Consulta 2
+consultar_curso(unidades, "Bacharelado em Biotecnologia (Ciclo Básico) - integral") # por nome
+# Consulta 4
+consultar_disciplina(unidades, "ACH0021") # por código
 
 driver.quit()
