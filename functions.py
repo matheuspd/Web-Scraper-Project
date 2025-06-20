@@ -1,5 +1,8 @@
 
-def listar_cursos_por_unidades(unidades):
+from classes import Unidade, Curso, Disciplina
+from globals import unidades
+
+def listar_cursos_por_unidades():
     for unidade in unidades:
         print(f"\n📍 Unidade: {unidade.nome}")
         if not unidade.cursos:
@@ -9,7 +12,7 @@ def listar_cursos_por_unidades(unidades):
                 print(f"  - {curso.nome}")
 
 
-def consultar_curso(unidades, nome_curso):
+def consultar_curso(nome_curso):
     for unidade in unidades:
         for curso in unidade.cursos:
             if curso.nome.lower() == nome_curso.lower():
@@ -36,7 +39,7 @@ def consultar_curso(unidades, nome_curso):
     print(f"⚠️ Curso '{nome_curso}' não encontrado.")
     return None
 
-def consultar_disciplina(unidades, codigo_busca):
+def consultar_disciplina(codigo_busca):
     codigo_busca = codigo_busca.strip().lower()
     cursos_que_possuem = []
     disciplina_encontrada = None
