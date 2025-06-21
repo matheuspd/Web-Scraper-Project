@@ -13,7 +13,7 @@ def web_scraping(limite_unidades:int):
 
     # Setup do navegador
     driver = webdriver.Chrome()
-    wait = WebDriverWait(driver, 10)
+    wait = WebDriverWait(driver, 20)
     driver.get("https://uspdigital.usp.br/jupiterweb/jupCarreira.jsp?codmnu=8275")
 
     # Espera o carregamento da unidade
