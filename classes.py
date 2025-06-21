@@ -1,5 +1,4 @@
-
-from typing import List, Optional, Union
+from typing import List
 
 class Disciplina:
     def __init__(self, codigo, nome, cred_aula, cred_trab, ch, ce, cp, atpa):

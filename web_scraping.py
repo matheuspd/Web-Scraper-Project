@@ -4,12 +4,11 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from bs4 import BeautifulSoup
-import time
 
-from globals import unidades
+from typing import List
 from classes import Unidade, Curso, Disciplina
 
-def web_scraping(limite_unidades:int):
+def web_scraping(limite_unidades:int) -> list[Unidade]:
 
     # Setup do navegador
     driver = webdriver.Chrome()
@@ -17,16 +16,18 @@ def web_scraping(limite_unidades:int):
     driver.get("https://uspdigital.usp.br/jupiterweb/jupCarreira.jsp?codmnu=8275")
 
     # Espera o carregamento da unidade
-    wait.until(EC.presence_of_element_located((By.ID, "comboUnidade")))
+    wait.until(lambda d: len(Select(d.find_element(By.ID, "comboUnidade")).options) > 1)
     select_unidade = Select(driver.find_element(By.ID, "comboUnidade"))
     opcoes_unidade = select_unidade.options[1:1 + limite_unidades]  # limitar a 3 unidades (por exemplo)
+
+    unidades:List[Unidade] = []
 
     for unidade_option in opcoes_unidade:
         nome_unidade = unidade_option.text.strip()
         select_unidade.select_by_visible_text(nome_unidade)
 
         # Aguarda carregar cursos
-        wait.until(EC.presence_of_element_located((By.ID, "comboCurso")))
+        wait.until(lambda d: len(Select(d.find_element(By.ID, "comboCurso")).options) > 1)
         select_curso = Select(driver.find_element(By.ID, "comboCurso"))
         cursos_opcoes = select_curso.options[1:]  # ignora primeira
 
@@ -37,12 +38,9 @@ def web_scraping(limite_unidades:int):
             driver.find_element(By.ID, "enviar").click()
             
             try:
-                # Espera ou aba aparecer OU botão "Fechar"
-                WebDriverWait(driver, 20).until(
-                    EC.any_of(
-                        EC.element_to_be_clickable((By.XPATH, "//button[span[text()='Fechar']]")),
-                        EC.element_to_be_clickable((By.ID, "step2-tab"))                    
-                    )
+                # Espera ou aba aparecer OU botão "Fechar" após popup de "Aguarde" fechar
+                WebDriverWait(driver, 20).until_not(
+                    EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Aguarde')]"))
                 )
 
                 # Tenta localizar popup e clicar em fechar se existir
@@ -50,7 +48,7 @@ def web_scraping(limite_unidades:int):
                 if botoes_fechar:
                     print(f"⚠️ Curso inválido: {curso_option.text}. Pulando.")
                     botoes_fechar[0].click()
-                    wait.until(EC.element_to_be_clickable((By.ID, "comboUnidade")))
+                    wait.until(EC.element_to_be_clickable((By.ID, "comboCurso")))
                     continue  # pula para o próximo curso
 
             except TimeoutException:
@@ -58,17 +56,18 @@ def web_scraping(limite_unidades:int):
                 continue  # também pula se nada aparecer
 
             # Aguarda aba ativa
-            wait.until(EC.presence_of_element_located((By.ID, "step2-tab")))
+            WebDriverWait(driver, 20).until_not(
+                EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Aguarde')]"))
+            )
             driver.find_element(By.ID, "step4-tab").click()  # Grade Curricular
 
             # Espera grade carregar
-            wait.until(EC.presence_of_element_located((By.ID, "gradeCurricular")))
-            time.sleep(1)
+            WebDriverWait(driver, 20).until_not(
+                EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Aguarde')]"))
+            )
             soup = BeautifulSoup(driver.page_source, 'html.parser')
 
             nome_curso = soup.find('span', class_='curso').text.strip()
-            # DEBUGGING
-            # print(nome_curso)
             dur_ideal = soup.find('span', class_='duridlhab').text.strip()
             dur_min = soup.find('span', class_='durminhab').text.strip()
             dur_max = soup.find('span', class_='durmaxhab').text.strip()
@@ -78,8 +77,21 @@ def web_scraping(limite_unidades:int):
             grade_div = soup.find('div', id='gradeCurricular')
             if grade_div:
                 linhas = grade_div.find_all('tr')
+                categoria_atual = 0  # obrigatoria: 0, eletiva: 1 e livre: 2
                 for tr in linhas:
                     tds = tr.find_all('td')
+
+                    # Detecta categoria pela presença de texto em apenas 1 coluna
+                    if len(tds) == 1:
+                        texto = tds[0].text.strip().lower()
+                        if "obrigatórias" in texto:
+                            categoria_atual = 0
+                        elif "optativas eletivas" in texto:
+                            categoria_atual = 1
+                        elif "optativas livres" in texto:
+                            categoria_atual = 2 
+                        continue  # pula linha de título
+
                     if len(tds) == 8 and tds[0].find('a'):  # linha de disciplina
                         codigo = tds[0].text.strip()
                         nome = tds[1].text.strip()
@@ -90,14 +102,22 @@ def web_scraping(limite_unidades:int):
                         cp = tds[6].text.strip()
                         atpa = tds[7].text.strip()
                         disc = Disciplina(codigo, nome, cred_aula, cred_trab, ch, ce, cp, atpa)
-                        # SEPARAR DISCIPLINAS OBRIGATORIAS, ELETIVAS E LIVRES
-                        curso.obrigatorias.append(disc)
+                        if categoria_atual == 0:
+                            curso.obrigatorias.append(disc)
+                        elif categoria_atual == 1:
+                            curso.optativas_eletivas.append(disc)
+                        elif categoria_atual == 2:
+                            curso.optativas_livres.append(disc)
                         # VER TAMBEM REQUISITOS
 
             unidade.cursos.append(curso)
             driver.find_element(By.ID, "step1-tab").click()
+            WebDriverWait(driver, 20).until_not(
+                EC.presence_of_element_located((By.XPATH, "//*[contains(text(), 'Aguarde')]"))
+            )
             wait.until(EC.element_to_be_clickable((By.ID, "comboUnidade")))
 
         unidades.append(unidade)
 
     driver.quit()
+    return unidades

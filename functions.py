@@ -1,8 +1,7 @@
+from typing import List
+from classes import Unidade
 
-from classes import Unidade, Curso, Disciplina
-from globals import unidades
-
-def listar_cursos_por_unidades():
+def listar_cursos_por_unidades(unidades:List[Unidade]):
     for unidade in unidades:
         print(f"\n📍 Unidade: {unidade.nome}")
         if not unidade.cursos:
@@ -12,7 +11,7 @@ def listar_cursos_por_unidades():
                 print(f"  - {curso.nome}")
 
 
-def consultar_curso(nome_curso):
+def consultar_curso(unidades:List[Unidade], nome_curso:str):
     for unidade in unidades:
         for curso in unidade.cursos:
             if curso.nome.lower() == nome_curso.lower():
@@ -22,24 +21,23 @@ def consultar_curso(nome_curso):
                 print(f"📉 Duração mínima: {curso.duracao_minima} semestres")
                 print(f"📈 Duração máxima: {curso.duracao_maxima} semestres")
 
-                # MUDAR PRINT PARA CARGA HORARIA ESTAGIO E OUTRAS 2
                 print("\n📘 Disciplinas obrigatórias:")
                 for d in curso.obrigatorias:
-                    print(f"XXX - {d.codigo} | {d.nome} | {d.creditos_aula}A/{d.creditos_trabalho}T | CH: {d.carga_horaria}")
+                    print(f"{d.codigo} | {d.nome} | {d.creditos_aula}A/{d.creditos_trabalho}T | CH: {d.carga_horaria} | CE: {d.carga_estagio} | CP: {d.carga_cpcc} | ATPA: {d.carga_atpa}")
                 
                 print("\n📘 Disciplinas optativas eletivas:")
                 for d in curso.optativas_eletivas:
-                    print(f"YYY - {d.codigo} | {d.nome} | {d.creditos_aula}A/{d.creditos_trabalho}T | CH: {d.carga_horaria}")
+                    print(f"{d.codigo} | {d.nome} | {d.creditos_aula}A/{d.creditos_trabalho}T | CH: {d.carga_horaria} | CE: {d.carga_estagio} | CP: {d.carga_cpcc} | ATPA: {d.carga_atpa}")
                 
                 print("\n📘 Disciplinas optativas livres:")
                 for d in curso.optativas_livres:
-                    print(f"ZZZ - {d.codigo} | {d.nome} | {d.creditos_aula}A/{d.creditos_trabalho}T | CH: {d.carga_horaria}")
+                    print(f"{d.codigo} | {d.nome} | {d.creditos_aula}A/{d.creditos_trabalho}T | CH: {d.carga_horaria} | CE: {d.carga_estagio} | CP: {d.carga_cpcc} | ATPA: {d.carga_atpa}")
 
                 return curso
     print(f"⚠️ Curso '{nome_curso}' não encontrado.")
     return None
 
-def consultar_disciplina(codigo_busca):
+def consultar_disciplina(unidades:List[Unidade], codigo_busca:str):
     codigo_busca = codigo_busca.strip().lower()
     cursos_que_possuem = []
     disciplina_encontrada = None

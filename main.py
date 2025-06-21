@@ -1,16 +1,18 @@
-
-from classes import Unidade, Curso, Disciplina
 from functions import listar_cursos_por_unidades, consultar_curso, consultar_disciplina
 from web_scraping import web_scraping
-from globals import console
+from rich.console import Console
+from typing import List
+from classes import Unidade
+
+console = Console()
 
 def main():
 
     # Número máximo de unidades a processar
-    limite_unidades:int = int(console.input("[bold #57a8ff]Digite o número máximo de unidades a processar: "))
+    limite_unidades = int(console.input("[bold #57a8ff]Digite o número máximo de unidades a processar: "))
 
     # Inicia o processo de web scraping
-    web_scraping(limite_unidades)
+    unidades:List[Unidade] = web_scraping(limite_unidades)
 
     # Entrada do usuário para consultas
     while True:
@@ -27,15 +29,15 @@ def main():
             console.print("Até a próxima! 👋", style="bold #cc0000")
             break
         elif(option == "1"):
-            listar_cursos_por_unidades()
+            listar_cursos_por_unidades(unidades)
         elif(option == "2"):
             # Exemplo: "Bacharelado em Biotecnologia (Ciclo Básico) - integral"
-            consultar_curso("")
+            consultar_curso(unidades, "Bacharelado em Lazer e Turismo (Ciclo Básico) - vespertino")
         elif(option == "3"):
             console.print("Essa opção ainda não foi implementada.", style="bold #cc0000")
         elif(option == "4"):
             # Exemplo: "ACH0021"
-            consultar_disciplina("")
+            consultar_disciplina(unidades, "ACH0021")
         elif(option == "5"):
             console.print("Essa opção ainda não foi implementada.", style="bold #cc0000")
         else:
