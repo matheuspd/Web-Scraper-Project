@@ -78,4 +78,4 @@ Enter the number corresponding to the query you want to perform:
 0. Exit
 ```
 
-Enter the numbers of the options to obtain the deride answers and 0 when you want to exit the program.
+Enter the numbers of the options to obtain the desired answers and 0 when you want to exit the program.
