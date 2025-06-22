@@ -79,5 +79,7 @@ def main():
             # Opção inválida
             console.print("Opção inválida. Tente novamente.", style="bold #cc0000")
 
+        console.input("[bold #57a8ff]Pressione Enter para continuar...[/]")
+
 if __name__ == "__main__":
     main()
