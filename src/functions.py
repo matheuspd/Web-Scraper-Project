@@ -1,12 +1,17 @@
 from typing import List, Optional
-from classes import Unidade, Curso, Disciplina
+from classes import Unidade, Disciplina
 from collections import defaultdict
 from rich.console import Console
 from rich.table import Table
 
 console = Console()
 
-def listar_cursos_por_unidades(unidades: List[Unidade]) -> None:
+def listar_cursos_por_unidades(unidades: List[Unidade]):
+    """
+    Lista todos os cursos agrupados por unidade.
+    Args:
+        unidades (List[Unidade]): Lista de objetos Unidade com seus cursos preenchidos.
+    """
     for unidade in unidades:
         table = Table(title=f"📍 Unidade: {unidade.nome}", style="bold #57a8ff")
         table.add_column("Cursos", style="cyan")
@@ -18,7 +23,15 @@ def listar_cursos_por_unidades(unidades: List[Unidade]) -> None:
         console.print(table)
         print()
 
-def consultar_curso(unidades: List[Unidade], nome_curso: str) -> Optional[Curso]:
+def consultar_curso(unidades: List[Unidade], nome_curso: str):
+    """
+    Exibe as informações detalhadas de um curso específico, incluindo suas disciplinas.
+    Args:
+        unidades (List[Unidade]): Lista de unidades com cursos e disciplinas.
+        nome_curso (str): Nome do curso a ser consultado.
+    Returns:
+        Curso: O objeto do curso encontrado, ou None caso não seja encontrado.
+    """
     for unidade in unidades:
         for curso in unidade.cursos:
             if curso.nome.lower() == nome_curso.lower():
@@ -64,26 +77,65 @@ def consultar_curso(unidades: List[Unidade], nome_curso: str) -> Optional[Curso]
     return None
 
 def consultar_todos_os_cursos(unidades: List[Unidade]):
+    """
+    Consulta e exibe as informações detalhadas de todos os cursos disponíveis.
+    Args:
+        unidades (List[Unidade]): Lista de unidades com seus cursos.
+    """
     for unidade in unidades:
         for curso in unidade.cursos:
             consultar_curso(unidades, curso.nome)
 
 def consultar_disciplina(unidades: List[Unidade], codigo_busca: str) -> Optional[Disciplina]:
+    """
+    Exibe as informações de uma disciplina específica e os cursos em que ela está presente.
+    Args:
+        unidades (List[Unidade]): Lista de unidades com seus cursos e disciplinas.
+        codigo_busca (str): Código da disciplina a ser consultada.
+    Returns:
+        disciplina_encontrada: A primeira ocorrência da disciplina com o código fornecido, ou None se a disciplina não for encontrada.
+    """
     codigo = codigo_busca.strip().lower()
     cursos_que_possuem: List[tuple[str, str]] = []
     disciplina_encontrada: Optional[Disciplina] = None
 
     for unidade in unidades:
         for curso in unidade.cursos:
+            # Flag para indicar se a disciplina já foi encontrada nesse curso
+            disciplina_no_curso = False
+
             for d in curso.obrigatorias:
                 if d.codigo.lower() == codigo:
                     if not disciplina_encontrada:
                         disciplina_encontrada = d
                     cursos_que_possuem.append((curso.nome, unidade.nome))
+                    disciplina_no_curso = True
+                    break  # sai do loop obrigatorias
+
+            if disciplina_no_curso:
+                continue  # passa para o próximo curso
+
+            for d in curso.optativas_eletivas:
+                if d.codigo.lower() == codigo:
+                    if not disciplina_encontrada:
+                        disciplina_encontrada = d
+                    cursos_que_possuem.append((curso.nome, unidade.nome))
+                    disciplina_no_curso = True
+                    break  # sai do loop optativas_eletivas
+
+            if disciplina_no_curso:
+                continue  # passa para o próximo curso
+
+            for d in curso.optativas_livres:
+                if d.codigo.lower() == codigo:
+                    if not disciplina_encontrada:
+                        disciplina_encontrada = d
+                    cursos_que_possuem.append((curso.nome, unidade.nome))
+                    break  # sai do loop optativas_livres
 
     if not disciplina_encontrada:
-        console.print(f"⚠️ Nenhuma disciplina encontrada com o código '{codigo_busca}'.", style="bold red")
-        return None
+        print(f"⚠️ Nenhuma disciplina encontrada com o código '{codigo_busca}'.")
+        return
 
     d = disciplina_encontrada
     console.print(f"\n📖 Disciplina: {d.nome} ({d.codigo})", style="bold #57a8ff")
@@ -109,8 +161,12 @@ def consultar_disciplina(unidades: List[Unidade], codigo_busca: str) -> Optional
 
     return disciplina_encontrada
 
-
-def consultar_disciplinas_em_varios_cursos(unidades: List[Unidade]) -> None:
+def consultar_disciplinas_em_varios_cursos(unidades: List[Unidade]):
+    """
+    Identifica disciplinas que estão presentes em mais de um curso e exibe suas ocorrências.
+    Args:
+        unidades (List[Unidade]): Lista de unidades com seus cursos e disciplinas.
+    """
     mapa_disciplinas = defaultdict(list)  # chave: código, valor: lista de (nome, curso, unidade, tipo)
 
     for unidade in unidades:
@@ -122,11 +178,11 @@ def consultar_disciplinas_em_varios_cursos(unidades: List[Unidade]) -> None:
             for d in curso.optativas_livres:
                 mapa_disciplinas[d.codigo.lower()].append((d.nome, curso.nome, unidade.nome, "Optativa Livre"))
 
-    # Filtra apenas disciplinas que ocorrem em mais de um curso
+    # Filtra apenas disciplinas com mais de uma ocorrência
     disciplinas_repetidas = {cod: infos for cod, infos in mapa_disciplinas.items() if len(infos) > 1}
 
     if not disciplinas_repetidas:
-        console.print("⚠️ Nenhuma disciplina encontrada em mais de um curso.", style="bold red")
+        print("⚠️ Nenhuma disciplina encontrada em mais de um curso.")
         return
 
     for codigo, ocorrencias in disciplinas_repetidas.items():
