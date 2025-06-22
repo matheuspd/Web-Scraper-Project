@@ -1,5 +1,6 @@
 from typing import List
 from classes import Unidade
+from collections import defaultdict
 
 def listar_cursos_por_unidades(unidades:List[Unidade]):
     for unidade in unidades:
@@ -37,6 +38,11 @@ def consultar_curso(unidades:List[Unidade], nome_curso:str):
     print(f"⚠️ Curso '{nome_curso}' não encontrado.")
     return None
 
+def consultar_todos_os_cursos(unidades: List[Unidade]):
+    for unidade in unidades:
+        for curso in unidade.cursos:
+            consultar_curso(unidades, curso.nome)
+
 def consultar_disciplina(unidades:List[Unidade], codigo_busca:str):
     codigo_busca = codigo_busca.strip().lower()
     cursos_que_possuem = []
@@ -62,3 +68,29 @@ def consultar_disciplina(unidades:List[Unidade], codigo_busca:str):
     print("\n📚 Presente nos cursos:")
     for curso_nome, unidade_nome in cursos_que_possuem:
         print(f" - {curso_nome} ({unidade_nome})")
+
+
+def consultar_disciplinas_em_varios_cursos(unidades: List[Unidade]):
+    mapa_disciplinas = defaultdict(list)  # chave: código, valor: lista de (nome, curso, unidade, tipo)
+
+    for unidade in unidades:
+        for curso in unidade.cursos:
+            for d in curso.obrigatorias:
+                mapa_disciplinas[d.codigo.lower()].append((d.nome, curso.nome, unidade.nome, "Obrigatória"))
+            for d in curso.optativas_eletivas:
+                mapa_disciplinas[d.codigo.lower()].append((d.nome, curso.nome, unidade.nome, "Optativa Eletiva"))
+            for d in curso.optativas_livres:
+                mapa_disciplinas[d.codigo.lower()].append((d.nome, curso.nome, unidade.nome, "Optativa Livre"))
+
+    # Filtra apenas disciplinas que ocorrem em mais de um curso
+    disciplinas_repetidas = {cod: infos for cod, infos in mapa_disciplinas.items() if len(infos) > 1}
+
+    if not disciplinas_repetidas:
+        print("⚠️ Nenhuma disciplina encontrada em mais de um curso.")
+        return
+
+    for codigo, ocorrencias in disciplinas_repetidas.items():
+        nome = ocorrencias[0][0]
+        print(f"\n📖 Disciplina: {nome} ({codigo.upper()}) aparece em {len(ocorrencias)} cursos:")
+        for _, curso, unidade, tipo in ocorrencias:
+            print(f" - {curso} ({unidade}) [{tipo}]")
