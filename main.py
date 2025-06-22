@@ -38,13 +38,13 @@ def main():
             listar_cursos_por_unidades(unidades)
         elif(option == "2"):
             # Exemplo: "Bacharelado em Lazer e Turismo (Ciclo Básico) - vespertino"
-            curso:str = console.input("[bold #57a8ff]Digite o curso que deseja consultar...[/]")
+            curso:str = console.input("[bold #57a8ff]Digite o curso que deseja consultar:\n").strip()
             consultar_curso(unidades, curso)
         elif(option == "3"):
             consultar_todos_os_cursos(unidades)
         elif(option == "4"):
             # Exemplo: "ACH0021"
-            disciplina:str = console.input("[bold #57a8ff]Digite o código da disciplina que deseja consultar...[/]")
+            disciplina:str = console.input("[bold #57a8ff]Digite o código da disciplina que deseja consultar:\n").strip()
             consultar_disciplina(unidades, disciplina)
         elif(option == "5"):
             consultar_disciplinas_em_varios_cursos(unidades)
