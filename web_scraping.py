@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 from typing import List
 from classes import Unidade, Curso, Disciplina
 
-def web_scraping(limite_unidades:int) -> list[Unidade]:
+def web_scraping(limite_unidades:int) -> List[Unidade]:
 
     # Setup do navegador
     driver = webdriver.Chrome()
